@@ -206,6 +206,34 @@
   .quiz-screen { }
   .quiz-screen.hide { display: none; }
 
+
+  /* START SCREEN */
+  .start-screen.hide { display: none; }
+  .start-title { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+  .start-desc  { font-size: 14px; color: var(--gray); line-height: 1.6; margin-bottom: 20px; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 13px; font-weight: 700; color: var(--text); }
+  .field label .req { color: var(--red); }
+  .field input {
+    font-family: inherit; font-size: 14px; padding: 11px 14px;
+    border: 2px solid var(--border); border-radius: 10px; outline: none;
+    transition: border-color .18s;
+  }
+  .field input:focus { border-color: var(--blue); }
+  .form-error { color: var(--red); font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  .quiz-hidden { display: none !important; }
+
+  /* SAVE STATUS */
+  .save-status {
+    font-size: 13px; padding: 10px 14px; border-radius: 10px;
+    margin: 0 auto 20px; max-width: 420px; line-height: 1.5;
+  }
+  .save-status.pending { background: #eff6ff; color: var(--navy); }
+  .save-status.ok      { background: var(--green-bg); color: var(--green); }
+  .save-status.err     { background: #fff7ed; color: #92400e; }
+  .save-status button  { margin-left: 6px; font: inherit; font-weight: 700; color: var(--navy);
+                         background: none; border: none; text-decoration: underline; cursor: pointer; }
+
   @media (max-width: 600px) {
     .card { padding: 20px 16px; }
     .q-text { font-size: 15px; }
@@ -221,19 +249,47 @@
     <span class="header-brand">AEON Vietnam</span>
     <span class="header-sub">HR Portal · HC Plan 2027</span>
   </div>
-  <span class="header-score" id="hdr-score">Câu 1 / 25</span>
+  <span class="header-score quiz-hidden" id="hdr-score">Câu 1 / 25</span>
 </div>
 
-<div class="progress-wrap">
+<div class="progress-wrap quiz-hidden" id="progress-wrap">
   <div class="progress-bar" id="prog-bar" style="width:4%"></div>
 </div>
 
-<div class="dot-nav" id="dot-nav"></div>
+<div class="dot-nav quiz-hidden" id="dot-nav"></div>
 
 <div class="main">
 
+  <!-- START SCREEN -->
+  <div class="start-screen" id="start-screen">
+    <div class="card" style="margin-top:16px">
+      <div class="start-title">Bài kiểm tra HC Plan 2027</div>
+      <div class="start-desc">Gồm 25 câu trắc nghiệm. Vui lòng nhập thông tin trước khi bắt đầu — kết quả sẽ được lưu tự động sau khi bạn hoàn thành.</div>
+      <form id="start-form" onsubmit="startQuiz(event)" novalidate>
+        <div class="field">
+          <label for="f-name">Họ và tên <span class="req">*</span></label>
+          <input id="f-name" autocomplete="name" maxlength="100">
+        </div>
+        <div class="field">
+          <label for="f-empid">Mã nhân viên <span class="req">*</span></label>
+          <input id="f-empid" maxlength="30">
+        </div>
+        <div class="field">
+          <label for="f-dept">Bộ phận / Store <span class="req">*</span></label>
+          <input id="f-dept" maxlength="100">
+        </div>
+        <div class="field">
+          <label for="f-email">Email</label>
+          <input id="f-email" type="email" autocomplete="email" maxlength="120">
+        </div>
+        <div class="form-error" id="form-error"></div>
+        <button class="btn-primary" type="submit" style="width:100%">Bắt đầu làm bài →</button>
+      </form>
+    </div>
+  </div>
+
   <!-- QUIZ SCREEN -->
-  <div class="quiz-screen" id="quiz-screen">
+  <div class="quiz-screen hide" id="quiz-screen">
     <div class="card" id="q-card">
       <div class="q-tag" id="q-tag">Câu 1</div>
       <div class="q-text" id="q-text"></div>
@@ -259,6 +315,7 @@
       <div class="result-emoji" id="res-emoji">🏆</div>
       <div class="result-grade" id="res-grade"></div>
       <div class="result-sub">Bài kiểm tra HC Plan 2027 · AEON Vietnam</div>
+      <div class="save-status pending" id="save-status">Đang lưu kết quả…</div>
       <div class="score-ring">
         <span class="score-num" id="res-score"></span>
         <span class="score-den" id="res-den"></span>
@@ -273,16 +330,154 @@
 </div><!-- /main -->
 
 <script>
+// ================== CẤU HÌNH LƯU KẾT QUẢ ==================
+// Dán URL Web App của Google Apps Script (xem README.md) vào đây.
+// Để trống thì bài test vẫn chạy nhưng kết quả không được gửi lên cloud.
+const SUBMIT_URL = '';
+// ============================================================
 const QUIZ = [{"id": "Q1", "question": "Theo HC Plan 2027, HOD muốn chấm dứt 01 position đang hiện hữu trong năm 2027 thì cần làm gì?", "options": [{"label": "A", "text": "Vào New Headcount → nhập số lượng = 0 cho vị trí cần chấm dứt", "correct": false}, {"label": "B", "text": "Vào Current Headcount → chọn vị trí/nhân viên → View/Edit → Action Type = Reduce → nhập Effective date có hiệu lực giảm", "correct": true}, {"label": "C", "text": "Vào phần Current Headcount, chọn vị trí và nhấn Delete để xoá thông tin", "correct": false}, {"label": "D", "text": "Chỉ cần báo HRBP qua email, không cần thao tác gì trên hệ thống", "correct": false}, {"label": "E", "text": "Cả B và C đều đúng", "correct": false}], "correct_idx": 1}, {"id": "Q2", "question": "Theo quy trình được khuyến nghị trong HC Plan 2027, HOD muốn thảo luận thêm về Headcount Planning thì nên liên hệ với ai và theo hình thức nào?", "options": [{"label": "A", "text": "Gửi email cho HRBP và c/c cho TA team", "correct": false}, {"label": "B", "text": "Gửi email cho HRBP và c/c cho SP", "correct": false}, {"label": "C", "text": "Gửi email hoặc trao đổi trực tiếp đến HRBP/ HR Store và đồng thời c/c cho SPvà cấp quản lý của mình", "correct": true}, {"label": "D", "text": "Gửi Staff Hotline để được hỗ trợ nhanh nhất", "correct": false}], "correct_idx": 2}, {"id": "Q3", "question": "Theo HC Plan 2027, HOD có thể thực hiện điều chỉnh Job Grade của các vị trí trong Headcount Planning không và các trường hợp nào được hỗ trợ?", "options": [{"label": "A", "text": "Promote (Not Replacement): vị trí G3 tăng lên G4 — bộ phận tăng số lượng G4 và giảm vị trí G3 (không tuyển người thay thế G3)", "correct": false}, {"label": "B", "text": "Promote (Replacement): vị trí G3 tăng lên G4 — bộ phận tăng số lượng G4 và vẫn giữ vị trí G3 (cần tuyển người thay thế G3)", "correct": false}, {"label": "C", "text": "Cả A & B đều SAI. Không thể điều chỉnh Job Grade của vị trí trong Headcount Planning", "correct": false}, {"label": "D", "text": "Cả A và B đều đúng — hệ thống hỗ trợ cả hai trường hợp Promote", "correct": true}], "correct_idx": 3}, {"id": "Q4", "question": "Theo thao tác thực hiện HC Plan 2027, HOD cần làm gì khi muốn Transfer một vị trí hiện có ra khỏi bộ phận của mình từ tháng 3 (March)?", "options": [{"label": "A", "text": "Vào New Headcount – Other Department → thêm dòng mới với thông tin vị trí cần transfer → đặt Effective date = tháng 3", "correct": false}, {"label": "B", "text": "Vào Current Headcount, chọn vị trí → View/Edit → Action Type = Reduce → nhập ngày hiệu lực tháng 3", "correct": false}, {"label": "C", "text": "Vào Current Headcount → chọn vị trí → Action Type = Transfer → chọn Require Replacement (Yes/No) → dùng \"Load Org Chart for Dept. Transfers\" để chọn New Department nằm ngoài nhánh → chọn New Division/Section (nếu có) → đặt Effective date = tháng 3", "correct": true}, {"label": "D", "text": "Vào Current Headcount → chọn vị trí → Action Type = Transfer → chọn New Department từ danh sách ORG thông thường → đặt Effective date = tháng 3", "correct": false}], "correct_idx": 2}, {"id": "Q5", "question": "Theo HC Plan trên HR Portal, nếu HOD muốn thay đổi tên gọi của các nhánh tổ chức như Department, Division hoặc Section trong bộ phận mình phụ trách, HOD cần thực hiện bước nào sau đây?", "options": [{"label": "A", "text": "Gửi email trực tiếp cho phòng HRIS để yêu cầu cập nhật thay đổi trên hệ thống SAP", "correct": false}, {"label": "B", "text": "Truy cập trực tiếp vào Menu > Settings > Organization  > Edit ORG > Kiểm tra màn hình \"Summarize of Org Chart Changes\"", "correct": false}, {"label": "C", "text": "Tạo phiếu HC Plan mới → vào Data Organization > Edit ORG → cập nhật tên nhánh → kiểm tra lại tại bảng Summarize of Org Chart Changes → Submit phiếu", "correct": true}, {"label": "D", "text": "Tạo phiếu HC Plan mới → vào Current Headcount → chọn tất cả nhân viên thuộc ORG cần điều chỉnh tên → Edit → chọn Transfer (No Replacement)", "correct": false}], "correct_idx": 2}, {"id": "Q6", "question": "Theo HC Plan trên HR Portal, HOD cần thực hiện thao tác nào khi muốn Promote 1 vị trí từ G3 lên G4 bắt đầu từ tháng 3/2027 và KHÔNG cần tuyển người thay thế vị trí G3?", "options": [{"label": "A", "text": "Khi vị trí G4 đã có sẵn trong ORG (đang vacancy): vào thẳng Current Headcount → chọn G3 → Action Type = Promote, New Job Grade = G4, Require Replacement = No, Effective date = tháng 3 → xuống New Headcount kiểm tra và cập nhật lại vị trí G4 muốn promote", "correct": false}, {"label": "B", "text": "Mọi trường hợp: vào thẳng Current Headcount → chọn G3 → Action Type = Promote, New Job Grade = G4, Require Replacement = No, Effective date = tháng 3 — hoàn tất, không cần bước nào thêm", "correct": false}, {"label": "C", "text": "Khi vị trí G4 chưa tồn tại trong ORG: vào Data Organization > Edit ORG tạo vị trí G4 trước → vào Current Headcount chọn G3, Action Type = Promote, New Job Grade = G4, Require Replacement = No, Effective date = tháng 3 → xuống New Headcount kiểm tra và cập nhật lại vị trí G4 muốn promote", "correct": false}, {"label": "D", "text": "Chọn A và C", "correct": true}, {"label": "E", "text": "Chọn B và C", "correct": false}], "correct_idx": 3}, {"id": "Q7", "question": "Trường thông tin Division Sale (Hierarchy Sales) trong màn hình tạo ORG Unit có mục đích gì và người dùng cần thao tác như thế nào?", "options": [{"label": "A", "text": "Đối với Hierarchy Sales = 41|OTHERS, ý nghĩa là các sản phẩm thuộc division sales là Others", "correct": false}, {"label": "B", "text": "Dùng để phân bổ chi phí nhân sự (PE) về từng Division Sales theo báo cáo doanh thu — HOD phải tự chọn mapping Hierarchy Sales cho ORG, nghĩa là nhân sự tại ORG đó đóng góp trực tiếp sales cho Division này", "correct": false}, {"label": "C", "text": "Là trường bắt buộc cho loại hình GMS", "correct": false}, {"label": "D", "text": "Chỉ có B đúng", "correct": false}, {"label": "E", "text": "Cả B và C đều đúng", "correct": true}], "correct_idx": 4}, {"id": "Q8", "question": "Theo HC Plan trên HR Portal, khi nào HOD cần cập nhật hoặc tạo ORG Chart trong phiếu Kế hoạch định biên nhân sự?", "options": [{"label": "A", "text": "Mọi lần tạo phiếu HC Plan đều bắt buộc phải kiểm tra và cập nhật ORG Chart trước khi Submit", "correct": false}, {"label": "B", "text": "Chỉ khi tăng hoặc giảm số lượng nhân sự, không áp dụng khi giữ nguyên HC", "correct": false}, {"label": "C", "text": "Khi có thay đổi về cơ cấu tổ chức như thêm mới, đổi tên, xóa hoặc di chuyển các nhánh Department / Division / Section — không cần cập nhật ORG nếu chỉ điều chỉnh số lượng nhân sự", "correct": true}, {"label": "D", "text": "Cả A, B, C đều đúng", "correct": false}], "correct_idx": 2}, {"id": "Q9", "question": "Trong các tình huống dưới đây, tình huống nào được hệ thống xác định là Workflow \"Remain the same Headcount\" và phiếu sẽ được Submit thẳng lên HRBP sau bước HOD Submit?", "options": [{"label": "A", "text": "Khi tổng số lượng vị trí nhân viên Fulltime không đổi", "correct": false}, {"label": "B", "text": "Khi tổng số vị trí theo Job Grade không đổi", "correct": false}, {"label": "C", "text": "Khi ORG Chart không thay đổi", "correct": false}, {"label": "D", "text": "Khi tổng số lượng nhân viên Fulltime và Part-time theo Job Grade của từng tháng Jan–Dec 2027 không thay đổi so với Dec 2026", "correct": false}, {"label": "E", "text": "Cả C và D đều đúng", "correct": true}], "correct_idx": 4}, {"id": "Q10", "question": "Headcount Plan được xem là TĂNG Headcount và áp dụng Workflow \"Increase Headcount\" trong trường hợp nào?", "options": [{"label": "A", "text": "Khi số lượng FT tăng theo Job Grade ở ít nhất 1 tháng trong Jan–Dec 2027 so với Dec 2026", "correct": false}, {"label": "B", "text": "Khi số lượng PT tăng theo Job Grade ở ít nhất 1 tháng trong Jan–Dec 2027 so với Dec 2026", "correct": false}, {"label": "C", "text": "Khi Promote vị trí lên Job Grade cao hơn dù không tuyển người thay thế (Require Replacement = No)", "correct": false}, {"label": "D", "text": "Chỉ cần xảy ra ít nhất một trong các trường hợp A, B hoặc C", "correct": true}, {"label": "E", "text": "Cả A và B đều đúng, C thì không — vì Promote without Replacement không phát sinh thêm nhân sự", "correct": false}], "correct_idx": 3}, {"id": "Q11", "question": "Headcount Plan được xem là GIẢM Headcount và áp dụng Workflow \"Reduce Headcount\" trong trường hợp nào?", "options": [{"label": "A", "text": "Khi tổng số lượng nhân viên Fulltime theo Job Grade giảm ở ít nhất 1 tháng trong Jan–Dec 2027 so với Dec 2026", "correct": false}, {"label": "B", "text": "Khi tổng số lượng nhân viên Part-time theo Job Grade giảm ở ít nhất 1 tháng trong Jan–Dec 2027 so với Dec 2026", "correct": false}, {"label": "C", "text": "Khi Demote vị trí xuống Job Grade thấp hơn và không tuyển người thay thế vị trí Job Grade cũ", "correct": false}, {"label": "D", "text": "Cả A và B đều đúng", "correct": false}, {"label": "E", "text": "Cả A, B và C đều đúng", "correct": true}], "correct_idx": 4}, {"id": "Q12", "question": "Trên hệ thống HR Portal, hệ thống hỗ trợ mấy cách để thực hiện OT Planning và đó là những cách nào?", "options": [{"label": "A", "text": "1 cách: chỉ nhập tay OT Type và số giờ từng tháng rồi Save", "correct": false}, {"label": "B", "text": "2 cách: dùng Add để tạo nhanh hàng loạt theo OT type PHL, Normal; hoặc dùng Import OT để tải dữ liệu từ file Excel lên hệ thống", "correct": true}, {"label": "C", "text": "3 cách: nhập tay, Create hàng loạt, và Import từ Excel", "correct": false}, {"label": "D", "text": "2 cách: nhập tay từng phòng ban hoặc đồng bộ tự động từ SAP", "correct": false}], "correct_idx": 1}, {"id": "Q13", "question": "Trên hệ thống HR Portal, nếu nhập OT type = PHL (Public Holidays) của tháng 5/2027 thì thực tế sẽ dự kiến có bao nhiêu ngày PHL cần lên kế hoạch OT?", "options": [{"label": "A", "text": "1 ngày: chỉ có Quốc tế Lao động / Labour Day (May 1)", "correct": false}, {"label": "B", "text": "2 ngày: Ngày Giải phóng 30/4 (Liberation Day) và Quốc tế Lao động 1/5 (Labour Day)", "correct": true}, {"label": "C", "text": "3 ngày: Ngày Giải phóng 30/4 và 2 ngày nghỉ lễ Quốc tế Lao động (May 1 + ngày bù May 3 vì May 1 rơi vào thứ Bảy)", "correct": false}, {"label": "D", "text": "4 ngày: cộng thêm 1 ngày bù cho 30/4", "correct": false}], "correct_idx": 1}, {"id": "Q14", "question": "Trên hệ thống HR Portal, khi nhập OT type = PHL (Public Holidays) thì số giờ overtime được quy định nhập như thế nào?", "options": [{"label": "A", "text": "Nhập tổng số giờ làm việc của tất cả nhân viên đi làm trong ngày PHL, bao gồm cả giờ làm việc bình thường", "correct": false}, {"label": "B", "text": "Chỉ nhập số giờ OT của 1 nhân viên đại diện cho từng ngày PHL trong tháng", "correct": false}, {"label": "C", "text": "Xác định tỉ lệ nhân viên đi làm từng ngày PHL → xác định số giờ từng người làm vượt quá thời gian hợp đồng → tính tổng số giờ vượt của tất cả nhân viên → nhập tổng đó lên hệ thống", "correct": true}, {"label": "D", "text": "Nhập số ngày PHL nhân với số giờ làm việc tiêu chuẩn theo hợp đồng", "correct": false}], "correct_idx": 2}, {"id": "Q15", "question": "Phiếu Kế hoạch định biên nhân sự có thể được tạo trong trường hợp nào?", "options": [{"label": "A", "text": "Có sự thay đổi về sơ đồ tổ chức (Org Chart)", "correct": false}, {"label": "B", "text": "Có sự thay đổi về số lượng nhân viên mà không đổi cơ cấu tổ chức", "correct": false}, {"label": "C", "text": "Chỉ khi có yêu cầu của Ban Giám Đốc", "correct": false}, {"label": "D", "text": "Có sự thay đổi về sơ đồ tổ chức (Org Chart) hoặc số lượng nhân viên — chỉ cần một trong hai", "correct": true}], "correct_idx": 3}, {"id": "Q16", "question": "Khi thực hiện Transfer trong Headcount Planning, chức năng \"Load Org Chart for Dept. Transfers\" được sử dụng trong trường hợp nào?", "options": [{"label": "A", "text": "Dùng để tải lại toàn bộ sơ đồ tổ chức hiện tại của phòng ban đang làm phiếu", "correct": false}, {"label": "B", "text": "Dùng khi muốn điều chuyển vị trí sang một phòng ban khác nằm ngoài nhánh phòng ban của mình — tức là phòng ban đích không cùng nhánh với phòng ban hiện tại (ví dụ: từ HR Department sang Accounting Department)", "correct": true}, {"label": "C", "text": "Dùng để xác nhận Transfer đã hoàn tất và tự động cập nhật Current Headcount", "correct": false}, {"label": "D", "text": "Dùng để xem lịch sử các lần Transfer trước đây của nhân viên", "correct": false}], "correct_idx": 1}, {"id": "Q17", "question": "Trong hệ thống HR Portal và các hệ thống liên quan, Cost Center và Business Area có ý nghĩa gì và bộ phận nào của công ty sẽ khởi tạo các thông tin này?", "options": [{"label": "A", "text": "Cost Center: ghi nhận chi phí HR ở cấp Department/Line, do Accounting khởi tạo theo yêu cầu của HOD khi có thay đổi Org Chart. Business Area: ghi nhận chi phí và doanh thu theo cấp Store/BU (hình thành P&L report tương ứng), do Finance khởi tạo khi có đơn vị kinh doanh mới được phê duyệt thành lập", "correct": true}, {"label": "B", "text": "Cost Center: ghi nhận doanh thu theo cấp Store, do Finance khởi tạo. Business Area: ghi nhận chi phí theo cấp Department, do Accounting khởi tạo", "correct": false}, {"label": "C", "text": "Cost Center và Business Area đều chỉ dùng cho mục đích hiển thị, không liên quan đến ghi nhận chi phí", "correct": false}, {"label": "D", "text": "Cost Center và Business Area đều do HRIS khởi tạo và chỉ áp dụng cho cấp Department", "correct": false}], "correct_idx": 0}, {"id": "Q18", "question": "Công ty dự kiến mở New Store hoặc tạo New Line/Department vào năm 2027. Sắp xếp các bước thực hiện theo đúng thứ tự được khuyến nghị:\n(I) Nhập liệu ORG trên HR Portal: điền đầy đủ Hierarchy Sales (if any), Business Area code, Cost Center, v.v.\n(II) HOD/Project Manager đã được phê duyệt chủ trương tạo mới\n(III) Chờ phê duyệt trên hệ thống\n(IV) Gửi Accounting tạo Cost Center; gửi Finance tạo Business Area code; chuẩn bị Org Chart, HC Plan, OT Planning\n(V) Kiểm tra màn hình Current Headcount / New Headcount: điền đầy đủ thông tin\n(VI) Kiểm tra màn hình OT Planning: đặc biệt lưu ý các tháng có ngày lễ\n(VII) Kiểm tra thông tin tại mục Summarize of Org Chart Changes", "options": [{"label": "A", "text": "II → IV → I → V → VI → VII → III", "correct": true}, {"label": "B", "text": "II → IV → I → VII → V → VI → III", "correct": false}, {"label": "C", "text": "IV → II → I → V → VI → VII → III", "correct": false}, {"label": "D", "text": "II → I → IV → VII → V → VI → III", "correct": false}], "correct_idx": 0}, {"id": "Q19", "question": "Hệ thống có 3 loại Workflow type tương ứng với 3 tình huống nhân sự. Loại nào KHÔNG thuộc danh sách này?", "options": [{"label": "A", "text": "Increase Headcount (Tăng nhân sự)", "correct": false}, {"label": "B", "text": "Reduce Headcount (Giảm nhân sự)", "correct": false}, {"label": "C", "text": "Transfer Headcount (Điều chuyển nhân sự)", "correct": true}, {"label": "D", "text": "Remain the same Headcount (Giữ nguyên nhân sự)", "correct": false}], "correct_idx": 2}, {"id": "Q20", "question": "Trong giai đoạn Business Headcount Plan, mỗi loại Workflow có tổng bao nhiêu bước và bước phê duyệt cao nhất là gì?", "options": [{"label": "A", "text": "Tăng HC → 4 bước / 2nd Confirmed — Giảm HC → 3 bước / 1st Confirmed — Giữ nguyên HC → 2 bước / Submit", "correct": false}, {"label": "B", "text": "Tăng HC → 5 bước / Approved by EDs or GD — Giảm HC → 4 bước / 2nd Confirmed — Giữ nguyên HC → 2 bước / Submit", "correct": false}, {"label": "C", "text": "Tăng HC → 5 bước / Approved by EDs or GD — Giảm HC → 3 bước / 1st Confirmed — Giữ nguyên HC → 2 bước / Submit", "correct": true}, {"label": "D", "text": "Tăng HC → 5 bước / Approved by EDs or GD — Giảm HC → 3 bước / 1st Confirmed — Giữ nguyên HC → 3 bước / 1st Confirmed", "correct": false}], "correct_idx": 2}, {"id": "Q21", "question": "Ai có quyền nhấn nút \"Cancel\" để hủy một phiếu đang trong quy trình duyệt?", "options": [{"label": "A", "text": "Bất kỳ người dùng nào có tài khoản trong hệ thống", "correct": false}, {"label": "B", "text": "Chỉ người duyệt ở bước hiện tại", "correct": false}, {"label": "C", "text": "Admin và người tạo phiếu", "correct": true}, {"label": "D", "text": "Chỉ tài khoản Admin", "correct": false}], "correct_idx": 2}, {"id": "Q22", "question": "Khi xóa một ORG Unit còn có nhân sự đang tồn tại, hệ thống phản hồi như thế nào?", "options": [{"label": "A", "text": "Cho phép xóa và tự động chuyển toàn bộ vị trí còn lại sang ORG Unit cha", "correct": false}, {"label": "B", "text": "Yêu cầu Admin xác nhận rồi mới xóa", "correct": false}, {"label": "C", "text": "Không cho phép xóa và cảnh báo người dùng: ORG Unit vẫn còn vị trí", "correct": true}, {"label": "D", "text": "Đánh dấu ORG là \"Inactive\" thay vì xóa hẳn", "correct": false}], "correct_idx": 2}, {"id": "Q23", "question": "Đối với các Business Model là MY CLOSET, HOME COORDY, BIKE có địa điểm kinh doanh đặt chung với GMS, thì Business Area code trên hệ thống được quy định như thế nào?", "options": [{"label": "A", "text": "Mỗi Business Model (MY CLOSET, HOME COORDY, BIKE) sẽ có Business Area code riêng biệt, khác hoàn toàn với GMS cùng địa điểm", "correct": false}, {"label": "B", "text": "MY CLOSET, HOME COORDY, BIKE sẽ dùng chung Business Area code với GMS tại cùng địa điểm kinh doanh đó", "correct": true}, {"label": "C", "text": "MY CLOSET, HOME COORDY, BIKE không cần Business Area code vì đã nằm trong địa điểm kinh doanh của GMS", "correct": false}, {"label": "D", "text": "Business Area code của MY CLOSET, HOME COORDY, BIKE do Finance tạo mới độc lập, không liên quan đến GMS", "correct": false}], "correct_idx": 1}, {"id": "Q24", "question": "Hệ thống Headcount Plan trên HR Portal hỗ trợ bao nhiêu chức năng chính và đó là những chức năng nào?", "options": [{"label": "A", "text": "3 chức năng: Thiết lập & điều chỉnh ORG — lập kế hoạch OT và tỉ lệ đi làm ngày lễ (PHL và Normal) — Headcount Plan từng tháng từ hiện tại đến các tháng trong tương lai", "correct": false}, {"label": "B", "text": "3 chức năng: Thiết lập ORG — lập kế hoạch OT (PHL, Normal và Weekend) — Headcount Plan từng tháng từ hiện tại đến các tháng trong tương lai", "correct": false}, {"label": "C", "text": "3 chức năng: Thiết lập ORG — lập kế hoạch OT (PHL và Normal) — Headcount Plan từng tháng từ hiện tại đến các tháng trong tương lai", "correct": false}, {"label": "D", "text": "3 chức năng: Thiết lập & điều chỉnh ORG — lập kế hoạch OT (PHL và Normal) — Headcount Plan từng tháng từ hiện tại đến các tháng trong tương lai", "correct": true}], "correct_idx": 3}, {"id": "Q25", "question": "HOD muốn giao cho nhân viên HR Store thực hiện HC Plan và cập nhật ORG thay mình. HOD cần truy cập vào đâu để thực hiện phân công?", "options": [{"label": "A", "text": "Menu > Settings > User Management > Assign Role", "correct": false}, {"label": "B", "text": "Menu > Recruitment > Headcount Plan → chuyển sang tab Assign Department → nhấn Assign → điền Department/Line, Assigned to, Effective date (bắt buộc), End date (không bắt buộc) → nhấn Assign để lưu", "correct": true}, {"label": "C", "text": "Menu > Settings > Organization → chọn phòng ban → Assign HR", "correct": false}, {"label": "D", "text": "Menu > Recruitment > Headcount Plan → nhấn Create Request → chọn người thực hiện thay", "correct": false}], "correct_idx": 1}];
 
 let current = 0;
 let answers = {}; // { qIndex: { chosen: optIdx, correct: bool } }
 let reviewMode = false;
 let wrongList = [];
+let participant = null;
+let startedAt = null;
+let submitted = false;
+const PENDING_KEY = 'hcplan_quiz_pending';
+
+function startQuiz(e) {
+  e.preventDefault();
+  const name  = document.getElementById('f-name').value.trim();
+  const empId = document.getElementById('f-empid').value.trim();
+  const dept  = document.getElementById('f-dept').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const err   = document.getElementById('form-error');
+  if (!name || !empId || !dept) {
+    err.textContent = 'Vui lòng nhập đầy đủ Họ tên, Mã nhân viên và Bộ phận / Store.';
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = 'Email không hợp lệ.';
+    return;
+  }
+  err.textContent = '';
+  participant = { name, empId, dept, email };
+  try { localStorage.setItem('hcplan_quiz_user', JSON.stringify(participant)); } catch (_) {}
+  startedAt = Date.now();
+  submitted = false;
+  document.getElementById('start-screen').classList.add('hide');
+  ['progress-wrap', 'dot-nav', 'hdr-score'].forEach(id =>
+    document.getElementById(id).classList.remove('quiz-hidden'));
+  showQuiz();
+}
+
+function buildPayload(score, grade) {
+  const total = QUIZ.length;
+  return {
+    submittedAt: new Date().toISOString(),
+    name: participant.name,
+    empId: participant.empId,
+    dept: participant.dept,
+    email: participant.email,
+    score,
+    total,
+    percent: Math.round(score / total * 1000) / 10,
+    grade,
+    durationSec: Math.round((Date.now() - startedAt) / 1000),
+    answers: QUIZ.map((q, i) => {
+      const a = answers[i];
+      return {
+        id: q.id,
+        chosen: a ? q.options[a.chosen].label : '',
+        correct: a ? a.correct : false
+      };
+    }),
+    userAgent: navigator.userAgent
+  };
+}
+
+function loadPending() {
+  try { return JSON.parse(localStorage.getItem(PENDING_KEY)) || []; } catch (_) { return []; }
+}
+function savePending(list) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(list)); } catch (_) {}
+}
+
+async function postResult(payload) {
+  // text/plain tránh CORS preflight — Apps Script vẫn đọc được qua e.postData.contents
+  const res = await fetch(SUBMIT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+}
+
+function setSaveStatus(kind, html) {
+  const el = document.getElementById('save-status');
+  el.className = 'save-status ' + kind;
+  el.innerHTML = html;
+}
+
+async function submitResult(payload) {
+  if (!SUBMIT_URL) {
+    setSaveStatus('err', '⚠️ Chưa cấu hình nơi lưu kết quả (SUBMIT_URL) — kết quả chưa được gửi.');
+    return;
+  }
+  setSaveStatus('pending', 'Đang lưu kết quả…');
+  try {
+    await postResult(payload);
+    setSaveStatus('ok', '☁️ Đã lưu kết quả thành công.');
+  } catch (e) {
+    savePending(loadPending().concat([payload]));
+    setSaveStatus('err', '⚠️ Chưa lưu được kết quả (mất kết nối?).'
+      + '<button onclick="retryPending()">Thử lại</button>');
+  }
+}
+
+async function retryPending() {
+  const list = loadPending();
+  if (!list.length || !SUBMIT_URL) return;
+  setSaveStatus('pending', 'Đang gửi lại kết quả…');
+  const left = [];
+  for (const p of list) {
+    try { await postResult(p); } catch (_) { left.push(p); }
+  }
+  savePending(left);
+  if (left.length) {
+    setSaveStatus('err', '⚠️ Vẫn chưa lưu được kết quả.'
+      + '<button onclick="retryPending()">Thử lại</button>');
+  } else {
+    setSaveStatus('ok', '☁️ Đã lưu kết quả thành công.');
+  }
+}
+
+// Gửi lại các kết quả còn tồn đọng từ lần trước (nếu có) một cách lặng lẽ
+async function flushPendingSilently() {
+  const list = loadPending();
+  if (!list.length || !SUBMIT_URL) return;
+  const left = [];
+  for (const p of list) {
+    try { await postResult(p); } catch (_) { left.push(p); }
+  }
+  savePending(left);
+}
 
 function init() {
+  try {
+    const u = JSON.parse(localStorage.getItem('hcplan_quiz_user'));
+    if (u) {
+      document.getElementById('f-name').value  = u.name  || '';
+      document.getElementById('f-empid').value = u.empId || '';
+      document.getElementById('f-dept').value  = u.dept  || '';
+      document.getElementById('f-email').value = u.email || '';
+    }
+  } catch (_) {}
   buildDots();
   renderQ(0);
+  flushPendingSilently();
 }
 
 function buildDots() {
@@ -451,8 +646,12 @@ function showResult() {
     dots.appendChild(d);
   });
 
-  if (wrongList.length === 0) {
-    document.getElementById('btn-review-wrong').style.display = 'none';
+  document.getElementById('btn-review-wrong').style.display = wrongList.length === 0 ? 'none' : 'block';
+
+  // Chỉ gửi 1 lần cho mỗi lượt làm bài (xem lại câu sai rồi quay về không gửi lại)
+  if (!submitted) {
+    submitted = true;
+    submitResult(buildPayload(score, grade));
   }
 }
 
@@ -473,6 +672,8 @@ function restart() {
   current = 0;
   reviewMode = false;
   wrongList = [];
+  startedAt = Date.now();
+  submitted = false;
   buildDots();
   renderQ(0);
   showQuiz();
