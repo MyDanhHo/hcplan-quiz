@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khảo sát sử dụng Dashboard HR Power BI</title>
+<style>
+  :root {
+    --navy: #1F497D;
+    --navy-dark: #163A63;
+    --magenta: #B41E8E;
+    --magenta-dark: #8E1770;
+    --bg: #F5F6F8;
+    --card: #FFFFFF;
+    --text: #1C2B39;
+    --muted: #6B7A8C;
+    --border: #E1E5EB;
+    --amber: #C08A1E;
+    --grey-status: #8A94A0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Roboto, Arial, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+    min-height: 100vh;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .header .badge {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--navy);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 17px;
+    margin: 0;
+    line-height: 1.3;
+    color: var(--navy-dark);
+  }
+  .header p.sub {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .progress-track {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 22px;
+  }
+  .progress-dot {
+    height: 4px;
+    flex: 1;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-dot.done { background: var(--navy); }
+  .progress-dot.current { background: var(--magenta); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px;
+    margin-bottom: 16px;
+  }
+  .step-label {
+    font-size: 12px;
+    color: var(--magenta);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+  h2 {
+    font-size: 19px;
+    margin: 0 0 6px;
+    color: var(--navy-dark);
+    line-height: 1.35;
+  }
+  p.hint {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin: 0 0 16px;
+    line-height: 1.5;
+  }
+  .search-wrap { position: relative; }
+  input[type="text"], textarea {
+    width: 100%;
+    font-size: 15px;
+    padding: 13px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    color: var(--text);
+    background: #FBFCFD;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--navy);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 90px; }
+  .results-list {
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .result-item {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-item:hover, .result-item.active { background: #EEF3F8; }
+  .result-item .name { font-weight: 600; color: var(--text); }
+  .result-item .meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .no-match {
+    margin-top: 10px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .no-match button {
+    background: none;
+    border: none;
+    color: var(--magenta);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-size: 13.5px;
+    text-decoration: underline;
+  }
+  .selected-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #EEF3F8;
+    border: 1px solid var(--navy);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 4px;
+  }
+  .selected-chip .name { font-weight: 700; color: var(--navy-dark); font-size: 14.5px; }
+  .selected-chip .meta { font-size: 12px; color: var(--muted); }
+  .selected-chip button {
+    background: none; border: none; color: var(--magenta);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .dash-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--navy);
+    text-decoration: none;
+    padding: 10px 14px;
+    border: 1.5px solid var(--navy);
+    border-radius: 9px;
+    margin-bottom: 18px;
+  }
+  .dash-link:hover { background: var(--navy); color: #fff; }
+  .option-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .option-card {
+    border: 1.5px solid var(--border);
+    border-radius: 11px;
+    padding: 13px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14.5px;
+    transition: border-color .12s, background .12s;
+  }
+  .option-card:hover { border-color: var(--navy); }
+  .option-card.selected {
+    border-color: var(--navy);
+    background: #EEF3F8;
+  }
+  .option-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .option-card.selected .option-dot { border-color: var(--navy); }
+  .option-card.selected .option-dot::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px; right: 3px; bottom: 3px;
+    border-radius: 50%;
+    background: var(--navy);
+  }
+  .status-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: auto;
+  }
+  .tag-used { background: #E4EEE4; color: #2E7D32; }
+  .tag-partial { background: #FBF0DC; color: var(--amber); }
+  .tag-none { background: #EEF0F2; color: var(--grey-status); }
+  .followup { margin-top: 4px; animation: fadein .18s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(-4px);} to { opacity: 1; transform: translateY(0);} }
+  .followup-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy-dark);
+    margin: 16px 0 10px;
+  }
+  .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .chip {
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .chip.selected { border-color: var(--magenta); background: #FBEAF5; color: var(--magenta-dark); font-weight: 600; }
+  .rating-row { display: flex; gap: 8px; margin-bottom: 4px; }
+  .rating-btn {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .rating-btn.selected { border-color: var(--magenta); background: var(--magenta); color: #fff; }
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+  button.primary, button.secondary {
+    border: none;
+    border-radius: 10px;
+    padding: 13px 18px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button.primary {
+    background: var(--magenta);
+    color: #fff;
+    flex: 1;
+  }
+  button.primary:disabled { background: #D9C3D3; cursor: not-allowed; }
+  button.secondary {
+    background: none;
+    color: var(--muted);
+    border: 1.5px solid var(--border);
+  }
+  select {
+    width: 100%;
+    font-size: 15px;
+    padding: 13px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    background: #FBFCFD;
+    color: var(--text);
+  }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--navy-dark);
+    margin-bottom: 8px;
+  }
+  .thanks-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    margin: 4px auto 18px;
+  }
+  .center { text-align: center; }
+  .admin-link {
+    text-align: center;
+    margin-top: 26px;
+  }
+  .admin-link button {
+    background: none; border: none; color: var(--muted);
+    font-size: 12px; text-decoration: underline; cursor: pointer;
+  }
+  .admin-table-wrap { overflow-x: auto; }
+  table.admin-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  table.admin-table th, table.admin-table td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.admin-table th { background: #F0F3F6; color: var(--navy-dark); }
+  .stat-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat-box {
+    flex: 1; min-width: 90px;
+    background: #F0F3F6;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-box .num { font-size: 20px; font-weight: 700; color: var(--navy-dark); }
+  .stat-box .lbl { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .updated-note {
+    background: #FBF0DC;
+    color: var(--amber);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+  }
+  .err-note {
+    background: #FEECEC;
+    color: #B91C1C;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ================== CẤU HÌNH LƯU KẾT QUẢ ==================
+// Dán URL Web App của Google Apps Script (xem dashboard-survey/README.md) vào đây.
+// Để trống thì khảo sát vẫn chạy nhưng câu trả lời không được gửi lên cloud.
+const SUBMIT_URL = '';
+// ============================================================
+
+const EMPLOYEES = [{"code": "262936", "name": "Mai Văn Phụng", "store": "BINH TAN - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "262939", "name": "Nguyễn Bá Tiến", "store": "CANARY - GMS", "dept": "CASHIER & CS & OMNI CHANNEL", "pos": "Line manager"}, {"code": "262943", "name": "Dương Văn Thi", "store": "NGUYEN VAN LINH", "dept": "AEON NGUYEN VAN LINH", "pos": "Store Manager"}, {"code": "262947", "name": "Lương Thị Kim Hà", "store": "CELADON - GMS", "dept": "SOFTLINE & KIDLINE", "pos": "Line Manager"}, {"code": "262949", "name": "Phạm Thị Kim Loan", "store": "BINH TAN - GMS", "dept": "OMNI CHANNEL", "pos": "Line manager"}, {"code": "262951", "name": "Trương Khánh Xuân", "store": "THANH HOA - GMS", "dept": "AEON THANH HOA", "pos": "Store Manager"}, {"code": "262952", "name": "Võ Lê Tấn Đạt", "store": "TAN AN - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "262953", "name": "Nguyễn Thanh Triều", "store": "BINH TAN - GMS", "dept": "AEON BINH TAN", "pos": "Store Manager"}, {"code": "262957", "name": "Huỳnh Thị Kim Thanh", "store": "CELADON - GMS", "dept": "AEON CELADON", "pos": "Store Manager"}, {"code": "262971", "name": "Lê Thị Hồng Sương", "store": "CANARY - GMS", "dept": "SOFTLINE & KIDLINE", "pos": "Line manager"}, {"code": "262974", "name": "Lý Cẩm Tú", "store": "TAN AN - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "262989", "name": "Nguyễn Thị Bích Châu", "store": "THAO DIEN", "dept": "AEON THAO DIEN", "pos": "Store Manager"}, {"code": "263138", "name": "Phạm Thị Dương", "store": "BINH TAN - GMS", "dept": "HARDLINE", "pos": "Line Manager"}, {"code": "263191", "name": "Nguyễn Thị Ngọc Linh", "store": "CELADON - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "263378", "name": "Ngô Văn Bách", "store": "HAI DUONG - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Acting Line Manager"}, {"code": "263442", "name": "Võ Thành Dân", "store": "TAN AN - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "263447", "name": "Huỳnh Thị Thúy Linh", "store": "CANARY - GMS", "dept": "HARDLINE", "pos": "Line Manager"}, {"code": "263495", "name": "Chu Thị Dung", "store": "HA DONG - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "264229", "name": "La Thục Trinh", "store": "CELADON - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "264766", "name": "Nguyễn Thanh Hải", "store": "HUE - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "268550", "name": "Phan Thị Thanh Tâm", "store": "TA QUANG BUU", "dept": "CASHIER & CS & OMNI CHANNEL", "pos": "Line Manager"}, {"code": "268553", "name": "Nguyễn Quốc Thạnh", "store": "TAN AN - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Line Manager"}, {"code": "268572", "name": "Phan Đức Thông", "store": "TAN AN - GMS", "dept": "AEON TAN AN", "pos": "Store Manager"}, {"code": "268810", "name": "Nguyễn Thị Phương Trang", "store": "BINH TAN - GMS", "dept": "SOFTLINE & KIDS", "pos": "Line Manager"}, {"code": "269000", "name": "Trương Lê Minh Hiếu", "store": "BINH TAN - GMS", "dept": "CASHIER & CUSTOMER SERVICE", "pos": "Line manager"}, {"code": "269521", "name": "Hà Phương Liên", "store": "LONG BIEN - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "269690", "name": "Phạm Thị Thảo Quyên", "store": "THANH HOA - GMS", "dept": "CASHIER & CUSTOMER SERVICE & OMNI CHANNE", "pos": "Acting Line Manager"}, {"code": "270296", "name": "Đinh Thiện Tâm", "store": "TA QUANG BUU", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "270371", "name": "Phạm Thanh Tùng", "store": "BD NEW CITY", "dept": "AEON BINH DUONG NEW CITY", "pos": "Store manager"}, {"code": "270847", "name": "Nguyễn Thị Phương Thảo", "store": "BINH TAN - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "271407", "name": "Nguyễn Thị Thu Dịu", "store": "CANARY - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "272684", "name": "Nguyễn Duy Trọng", "store": "THANH HOA - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "274540", "name": "Phan Thị Minh Hảo", "store": "CANARY - GMS", "dept": "AEON CANARY", "pos": "Store Manager"}, {"code": "277458", "name": "Nguyễn Hoàng Tố Linh", "store": "CELADON - GMS", "dept": "CASHIER & CUSTOMER SERVICE", "pos": "Line Manager"}, {"code": "277602", "name": "Lê Thanh Hương", "store": "HA DONG - GMS", "dept": "OMNI CHANNEL", "pos": "Line manager"}, {"code": "278264", "name": "Đỗ Ngọc Khánh Chi", "store": "HA DONG - GMS", "dept": "AEON HA DONG", "pos": "Store Manager"}, {"code": "278274", "name": "Đỗ Thị Mai Xuân", "store": "HA DONG - GMS", "dept": "SOFTLINE & KIDLINE", "pos": "Line Manager"}, {"code": "278824", "name": "Nguyễn Thị Hải Thanh", "store": "LONG BIEN - GMS", "dept": "AEON LONG BIEN", "pos": "Store Manager"}, {"code": "278980", "name": "Phạm Thị Én", "store": "LONG BIEN - GMS", "dept": "AEON LONG BIEN", "pos": "Deputy Store Manager"}, {"code": "278985", "name": "Phạm Thị Dũng", "store": "XUAN THUY - GMS", "dept": "CASHIER & CS & OMNI CHANNEL", "pos": "Line Manager"}, {"code": "279346", "name": "Phạm Thị Duyên", "store": "HA DONG - GMS", "dept": "AEON HA DONG", "pos": "Deputy Store Manager"}, {"code": "279367", "name": "Lê Thị Thùy Dương", "store": "VAN GIANG - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "279420", "name": "Nguyễn Thị Hiếu", "store": "XUAN THUY - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Line Manager"}, {"code": "280214", "name": "Vũ Thị Thanh Phương", "store": "VAN GIANG - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Line Manager"}, {"code": "280282", "name": "Lò Thị Thu Quỳnh", "store": "VAN GIANG - GMS", "dept": "CASHIER & CS & OMNI CHANNEL", "pos": "Line Manager"}, {"code": "280310", "name": "Mai Lệ Chi", "store": "HAI DUONG - GMS", "dept": "ADMIN", "pos": "Acting Line Manager"}, {"code": "280492", "name": "Lê Nguyễn Quý Khương", "store": "HUE - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "281460", "name": "Tạ Đình Nhựt", "store": "HUE - GMS", "dept": "AEON THUA THIEN HUE", "pos": "Store Manager"}, {"code": "286552", "name": "Trần Quang Tường", "store": "CELADON - GMS", "dept": "OMNI CHANNEL", "pos": "Line manager"}, {"code": "286889", "name": "Trần Văn Nghè", "store": "TA QUANG BUU", "dept": "AEON TA QUANG BUU", "pos": "Store manager"}, {"code": "287334", "name": "Nguyễn Hoàng Thơ", "store": "MIDORI", "dept": "AEON MIDORI PARK", "pos": "Store Manager"}, {"code": "287522", "name": "Đỗ Hoàng Minh", "store": "THANH HOA - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Acting Line Manager"}, {"code": "288191", "name": "Lê Thị Kim Chi", "store": "HA LONG - GMS", "dept": "ADMIN", "pos": "Acting Line Manager"}, {"code": "289170", "name": "Nguyễn Phương Duy", "store": "TAN AN - GMS", "dept": "CASHIER & CS & OMNI CHANNEL", "pos": "Line Manager"}, {"code": "289993", "name": "Lê Thị Hương Thắm", "store": "XUAN THUY - GMS", "dept": "AEON XUAN THUY", "pos": "Store Manager"}, {"code": "292595", "name": "Huỳnh Quốc Nam", "store": "CANARY - GMS", "dept": "FOODLINE 2", "pos": "Line manager"}, {"code": "297113", "name": "Nguyễn Thị Ngọc Ý", "store": "TA QUANG BUU", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Line Manager"}, {"code": "299729", "name": "Từ Thanh Tài", "store": "HUE - GMS", "dept": "CASHIER & CUSTOMER SERVICE", "pos": "Line Manager"}, {"code": "302892", "name": "Trần Quang Bình", "store": "TA QUANG BUU", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "305946", "name": "Hà Thị Bích Hồng", "store": "LONG BIEN - GMS", "dept": "SOFTLINE & KIDLINE", "pos": "Line Manager"}, {"code": "312216", "name": "Trần Đình Nguyên", "store": "VAN GIANG - GMS", "dept": "AEON VAN GIANG", "pos": "Store Manager"}, {"code": "402249", "name": "Nguyễn Việt Cường", "store": "HAI DUONG - GMS", "dept": "AEON HAI DUONG", "pos": "Deputy Store Manager"}, {"code": "402394", "name": "Đào Bá Hùng", "store": "HA DONG - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "402450", "name": "Ngô Thị Minh Thu", "store": "HAI PHONG - GMS", "dept": "AEON HAI PHONG", "pos": "Store manager"}, {"code": "402954", "name": "Nguyễn Thị Thanh Mai", "store": "HA DONG - GMS", "dept": "CASHIER & CUSTOMER SERVICE", "pos": "Line Manager"}, {"code": "402990", "name": "Nguyễn Thị Thanh Thủy", "store": "VAN GIANG - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "406024", "name": "Võ Yến Bình", "store": "CELADON - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "406030", "name": "Ðinh Thị Thanh Hợp", "store": "HAI PHONG - GMS", "dept": "ADMIN", "pos": "Line manager"}, {"code": "406110", "name": "Lê Thị Hòa", "store": "HAI PHONG - GMS", "dept": "AEON HAI PHONG", "pos": "Deputy Store Manager"}, {"code": "406344", "name": "Trần Thị Mai Hương", "store": "LONG BIEN - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "406396", "name": "Nguyễn Thị Lụa", "store": "HA LONG - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Acting Line Manager"}, {"code": "406409", "name": "Trịnh Văn Vịnh", "store": "HA LONG - GMS", "dept": "FOODLINE 2", "pos": "Acting Line Manager"}, {"code": "406524", "name": "Nguyễn Thị Hồng Nhung", "store": "HAI PHONG - GMS", "dept": "SOFTLINE & KIDLINE", "pos": "Line Manager"}, {"code": "406583", "name": "Vũ Ánh Nguyệt", "store": "HAI PHONG - GMS", "dept": "CASHIER & CUSTOMER SERVICE", "pos": "Line manager"}, {"code": "406611", "name": "Nguyễn Thị Bình", "store": "LONG BIEN - GMS", "dept": "CASHIER & CUSTOMER SERVICE", "pos": "Acting Line manager"}, {"code": "408579", "name": "Nguyễn Ngọc Thiên Tâm", "store": "DA NANG", "dept": "AEON DA NANG THANH KHE", "pos": "Store Manager"}, {"code": "408810", "name": "Nguyễn Việt Cường", "store": "LONG BIEN - GMS", "dept": "HARDLINE", "pos": "Line Manager"}, {"code": "408894", "name": "Đỗ Minh Cường", "store": "XUAN THUY - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "408914", "name": "Nguyễn Thị Lệ Thủy", "store": "THE NINE", "dept": "THE NINE", "pos": "Store manager"}, {"code": "410271", "name": "Võ Thị Lệ Quyên", "store": "CANARY - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "410379", "name": "Lê Văn Hiếu", "store": "HA LONG - GMS", "dept": "AEON HA LONG", "pos": "Store Manager"}, {"code": "411415", "name": "Hoàng Ngọc Tuấn", "store": "XUAN THUY - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Line Manager"}, {"code": "412337", "name": "Nguyễn Thị Thủy", "store": "XUAN THUY - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "416567", "name": "Đặng Phước Hải", "store": "HUE - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "417024", "name": "Nguyễn Thế Dũng", "store": "HAI DUONG - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Acting Line Manager"}, {"code": "417196", "name": "Nguyễn Thị Mộng Tiên", "store": "HUE - GMS", "dept": "SOFTLINE & KIDLINE & HARDLINE", "pos": "Line Manager"}, {"code": "417635", "name": "Lê Thị Hương Giang", "store": "HAI DUONG - GMS", "dept": "CASHIER & CUSTOMER SERVICE & OMNI CHANNE", "pos": "Line Manager"}, {"code": "418427", "name": "Đào Văn Long", "store": "LONG BIEN - GMS", "dept": "OMNI CHANNEL", "pos": "Line manager"}, {"code": "418977", "name": "Đồng Nguyễn Minh Anh", "store": "HAI PHONG - GMS", "dept": "OMNI CHANNEL", "pos": "Acting Line Manager"}, {"code": "419801", "name": "Phan Thị Thanh Nhàn", "store": "HA LONG - GMS", "dept": "FOODLINE 1 & H&BC", "pos": "Acting Line Manager"}, {"code": "425846", "name": "Nguyễn Thị Hòa", "store": "THANH HOA - GMS", "dept": "ADMIN", "pos": "Line Manager"}, {"code": "425883", "name": "Đinh Thị Hồng Thanh", "store": "HAI DUONG - GMS", "dept": "FOODLINE 2", "pos": "Line Manager"}, {"code": "426045", "name": "Nguyễn Công Hòa", "store": "HAI DUONG - GMS", "dept": "SC MANAGEMENT", "pos": "Line Manager"}];
+const DASHBOARDS = [{"id": "pe", "name": "Personnel Expense", "link": "https://app.powerbi.com/links/WOoYJN64pt?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare"}, {"id": "wf", "name": "Workforce Metrics (MP Reports)", "link": "https://app.powerbi.com/links/c3L82KdVcE?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare&bookmarkGuid=78edd22c-a4a7-4ed5-a7d2-4ed605600c64"}, {"id": "sp", "name": "Staff Purchase", "link": "https://app.powerbi.com/links/HvHSpPe9uS?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare"}, {"id": "hp", "name": "Hiring Performance (Recruitment)", "link": "https://app.powerbi.com/links/u8PUCqvIcO?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare"}, {"id": "sa", "name": "Skill Allowance", "link": "https://app.powerbi.com/links/jomiJsGaWT?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare"}, {"id": "sl", "name": "Shift & Leave (AL/DOIL)", "link": "https://app.powerbi.com/links/xDOEiajCUS?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare&bookmarkGuid=d97193f7-6593-48ae-9b72-b6c4828d0542"}, {"id": "si", "name": "Sales Incentive", "link": "https://app.powerbi.com/links/OaeBwDPjTV?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare"}, {"id": "fm", "name": "Facility Management", "link": "https://app.powerbi.com/links/2D8rQ7dlbM?ctid=beb8970a-3fe1-44e2-823f-80eaa9e0c260&pbi_source=linkShare&bookmarkGuid=20d3a35e-46d3-472a-9e3e-c5a45e82a0b0"}];
+const REASONS = [
+  "Chưa được hướng dẫn/đào tạo",
+  "Đã biết nhưng chưa có thời gian thực hành",
+  "Giao diện/thao tác khó hiểu",
+  "Chưa biết dashboard này tồn tại",
+  "Muốn được hướng dẫn thêm"
+];
+const ADMIN_CODE = "SP2026"; // phải khớp với ADMIN_CODE trong apps-script/Code.gs
+
+let state = {
+  step: -1, // -1 = search, 0..7 = dashboards, 8 = general, 9 = thanks, -2 = not-in-list, -3 = admin-gate, -4 = admin-view
+  employee: null,
+  searchQuery: "",
+  answers: {}, // { pe: {status, reason}, ... , mostUseful, mostImprove, satisfaction, feedback }
+  alreadySubmitted: false,
+  loadingExisting: false,
+  saveError: ""
+};
+
+function removeDiacritics(str) {
+  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
+}
+
+function matchEmployee(q) {
+  if (!q || q.trim().length < 2) return [];
+  const nq = removeDiacritics(q.trim());
+  return EMPLOYEES.filter(e => {
+    const hay = removeDiacritics(e.code + " " + e.name + " " + e.store);
+    return hay.includes(nq);
+  }).slice(0, 8);
+}
+
+// ---------- Gọi Google Apps Script ----------
+async function apiGet(params) {
+  if (!SUBMIT_URL) return null;
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(SUBMIT_URL + '?' + qs);
+  return await res.json();
+}
+
+async function apiPost(payload) {
+  if (!SUBMIT_URL) throw new Error('SUBMIT_URL chưa được cấu hình');
+  // text/plain tránh CORS preflight — Apps Script vẫn đọc được qua e.postData.contents
+  const res = await fetch(SUBMIT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+  return data;
+}
+
+async function loadExisting(code) {
+  try {
+    const data = await apiGet({ code });
+    if (data && data.ok && data.found) return data.answers;
+  } catch (e) { /* mất mạng hoặc chưa cấu hình — coi như chưa có */ }
+  return null;
+}
+
+async function saveResponse() {
+  const payload = {
+    code: state.employee.code,
+    name: state.employee.name,
+    store: state.employee.store,
+    dept: state.employee.dept,
+    pos: state.employee.pos,
+    answers: state.answers,
+    submittedAt: new Date().toISOString()
+  };
+  await apiPost(payload); // ném lỗi nếu thất bại, để nơi gọi xử lý
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (state.step === -3) { app.innerHTML = renderAdminGate(); attachAdminGate(); return; }
+  if (state.step === -4) { renderAdminView(app); return; }
+  if (state.step === -2) { app.innerHTML = renderNotInList(); attachNotInList(); return; }
+  if (state.step === -1) { app.innerHTML = renderSearch(); attachSearch(); return; }
+  if (state.step >= 0 && state.step < DASHBOARDS.length) { app.innerHTML = renderDashboardStep(); attachDashboardStep(); return; }
+  if (state.step === DASHBOARDS.length) { app.innerHTML = renderGeneral(); attachGeneral(); return; }
+  if (state.step === DASHBOARDS.length + 1) { app.innerHTML = renderThanks(); attachThanks(); return; }
+}
+
+function header(stepLabel) {
+  const totalSteps = DASHBOARDS.length + 2; // search + 8 dash + general
+  let currentIndex = state.step === -1 ? 0 : (state.step === DASHBOARDS.length ? totalSteps - 1 : state.step + 1);
+  let dots = "";
+  for (let i = 0; i < totalSteps; i++) {
+    let cls = "progress-dot";
+    if (i < currentIndex) cls += " done";
+    else if (i === currentIndex) cls += " current";
+    dots += `<div class="${cls}"></div>`;
+  }
+  return `
+    <div class="header">
+      <div class="badge">HR</div>
+      <div>
+        <h1>Khảo sát sử dụng Dashboard HR Power BI</h1>
+        <p class="sub">${stepLabel}</p>
+      </div>
+    </div>
+    <div class="progress-track">${dots}</div>
+  `;
+}
+
+// ---------- SEARCH STEP ----------
+function renderSearch() {
+  const q = state.searchQuery;
+  const emp = state.employee;
+  let body = "";
+  if (emp) {
+    body = `
+      <div class="selected-chip">
+        <div>
+          <div class="name">${emp.name}</div>
+          <div class="meta">${emp.code} · ${emp.store} · ${emp.pos}</div>
+        </div>
+        <button id="clear-emp">Đổi</button>
+      </div>
+      ${state.loadingExisting ? '<div class="updated-note">Đang kiểm tra lịch sử trả lời…</div>' : ''}
+      ${!SUBMIT_URL ? '<div class="err-note">⚠️ Khảo sát chưa cấu hình nơi lưu (SUBMIT_URL) — câu trả lời sẽ không được gửi lên cloud.</div>' : ''}
+      ${state.alreadySubmitted ? '<div class="updated-note">Anh/chị đã từng trả lời khảo sát này — tiếp tục để xem/cập nhật lại câu trả lời.</div>' : ''}
+    `;
+  } else {
+    const matches = matchEmployee(q);
+    body = `
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Gõ mã nhân viên hoặc họ tên..." value="${q.replace(/"/g,'&quot;')}" autocomplete="off">
+        ${matches.length > 0 ? `<div class="results-list">${matches.map(m => `
+          <div class="result-item" data-code="${m.code}">
+            <div class="name">${m.name}</div>
+            <div class="meta">${m.code} · ${m.store} · ${m.pos}</div>
+          </div>`).join('')}</div>` : ''}
+      </div>
+      ${q.trim().length >= 2 && matches.length === 0 ? `<div class="no-match">Không tìm thấy tên phù hợp. <button id="not-in-list">Tên tôi không có trong danh sách</button></div>` : ''}
+    `;
+  }
+  return `
+    ${header("Bước 1/10 · Xác thực người trả lời")}
+    <div class="card">
+      <div class="step-label">XÁC THỰC</div>
+      <h2>Anh/chị vui lòng tìm và chọn tên mình</h2>
+      <p class="hint">Khảo sát chỉ áp dụng cho danh sách Store Manager/Line Manager/HR Store/HRBP/TA đã được xác định trước.</p>
+      ${body}
+      <div class="btn-row">
+        <button class="primary" id="btn-start" ${!emp ? 'disabled' : ''}>Bắt đầu</button>
+      </div>
+    </div>
+    <div class="admin-link"><button id="admin-btn">Xem kết quả tổng hợp (quản trị)</button></div>
+  `;
+}
+
+function attachSearch() {
+  const input = document.getElementById('search-input');
+  if (input) {
+    input.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value;
+      render();
+      document.getElementById('search-input').focus();
+      document.getElementById('search-input').selectionStart = document.getElementById('search-input').selectionEnd = state.searchQuery.length;
+    });
+  }
+  document.querySelectorAll('.result-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const code = item.getAttribute('data-code');
+      const emp = EMPLOYEES.find(e => e.code === code);
+      state.employee = emp;
+      state.searchQuery = "";
+      state.answers = {};
+      state.alreadySubmitted = false;
+      state.loadingExisting = true;
+      render();
+      const existing = await loadExisting(code);
+      state.loadingExisting = false;
+      if (existing) {
+        state.answers = existing;
+        state.alreadySubmitted = true;
+      }
+      render();
+    });
+  });
+  const clearBtn = document.getElementById('clear-emp');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    state.employee = null;
+    state.answers = {};
+    state.alreadySubmitted = false;
+    render();
+  });
+  const notInList = document.getElementById('not-in-list');
+  if (notInList) notInList.addEventListener('click', () => { state.step = -2; render(); });
+  const startBtn = document.getElementById('btn-start');
+  if (startBtn) startBtn.addEventListener('click', () => {
+    if (!state.employee) return;
+    state.step = 0;
+    render();
+  });
+  const adminBtn = document.getElementById('admin-btn');
+  if (adminBtn) adminBtn.addEventListener('click', () => { state.step = -3; render(); });
+}
+
+// ---------- NOT IN LIST ----------
+function renderNotInList() {
+  return `
+    ${header("Không thuộc phạm vi khảo sát")}
+    <div class="card center">
+      <div class="thanks-icon">i</div>
+      <h2>Khảo sát chưa áp dụng với anh/chị</h2>
+      <p class="hint">Danh sách khảo sát hiện chỉ gồm các Store Manager/Line Manager/HR Store/HRBP/TA đã được xác định trước. Nếu đây là nhầm lẫn, vui lòng liên hệ HR SP để được bổ sung.</p>
+      <div class="btn-row">
+        <button class="secondary" id="back-btn" style="flex:1">Quay lại tìm tên khác</button>
+      </div>
+    </div>
+  `;
+}
+function attachNotInList() {
+  document.getElementById('back-btn').addEventListener('click', () => { state.step = -1; render(); });
+}
+
+// ---------- DASHBOARD STEP ----------
+function renderDashboardStep() {
+  const d = DASHBOARDS[state.step];
+  const ans = state.answers[d.id] || {};
+  const statusOptions = [
+    { key: "used", label: "Đã sử dụng được", tag: "tag-used" },
+    { key: "partial", label: "Biết nhưng chưa dùng được", tag: "tag-partial" },
+    { key: "none", label: "Chưa có thông tin", tag: "tag-none" }
+  ];
+  const showFollowup = ans.status === "partial" || ans.status === "none";
+  return `
+    ${header(`Bước ${state.step + 2}/10 · Dashboard ${state.step + 1}/${DASHBOARDS.length}`)}
+    <div class="card">
+      <div class="step-label">DASHBOARD</div>
+      <h2>${d.name}</h2>
+      <a class="dash-link" href="${d.link}" target="_blank" rel="noopener">Xem dashboard trên Power BI →</a>
+      <p class="hint">Anh/chị đang ở mức nào với dashboard này?</p>
+      <div class="option-list">
+        ${statusOptions.map(o => `
+          <div class="option-card ${ans.status === o.key ? 'selected' : ''}" data-status="${o.key}">
+            <div class="option-dot"></div>
+            <div>${o.label}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${showFollowup ? `
+        <div class="followup">
+          <div class="followup-label">Vì sao anh/chị chưa sử dụng được, hoặc cần hỗ trợ gì thêm?</div>
+          <div class="chip-list">
+            ${REASONS.map(r => `<div class="chip ${ans.reason === r ? 'selected' : ''}" data-reason="${r.replace(/"/g,'&quot;')}">${r}</div>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      <div class="btn-row">
+        <button class="secondary" id="btn-back">Quay lại</button>
+        <button class="primary" id="btn-next" ${isDashStepValid(ans, showFollowup) ? '' : 'disabled'}>Tiếp theo</button>
+      </div>
+    </div>
+  `;
+}
+function isDashStepValid(ans, showFollowup) {
+  if (!ans.status) return false;
+  if (showFollowup && !ans.reason) return false;
+  return true;
+}
+function attachDashboardStep() {
+  const d = DASHBOARDS[state.step];
+  if (!state.answers[d.id]) state.answers[d.id] = {};
+  document.querySelectorAll('[data-status]').forEach(el => {
+    el.addEventListener('click', () => {
+      state.answers[d.id].status = el.getAttribute('data-status');
+      if (state.answers[d.id].status === 'used') state.answers[d.id].reason = null;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-reason]').forEach(el => {
+    el.addEventListener('click', () => {
+      state.answers[d.id].reason = el.getAttribute('data-reason');
+      render();
+    });
+  });
+  document.getElementById('btn-back').addEventListener('click', () => {
+    if (state.step === 0) { state.step = -1; } else { state.step -= 1; }
+    render();
+  });
+  document.getElementById('btn-next').addEventListener('click', () => {
+    state.step += 1;
+    render();
+  });
+}
+
+// ---------- GENERAL STEP ----------
+function renderGeneral() {
+  const a = state.answers;
+  const dashOptions = DASHBOARDS.map(d => `<option value="${d.id}" ${a.mostUseful === d.id ? 'selected' : ''}>${d.name}</option>`).join('');
+  const dashOptions2 = DASHBOARDS.map(d => `<option value="${d.id}" ${a.mostImprove === d.id ? 'selected' : ''}>${d.name}</option>`).join('');
+  const ratingRow = [1,2,3,4,5].map(n => `<div class="rating-btn ${a.satisfaction === n ? 'selected' : ''}" data-rating="${n}">${n}</div>`).join('');
+  const canSubmit = a.mostUseful && a.mostImprove && a.satisfaction;
+  return `
+    ${header("Bước 10/10 · Đánh giá chung")}
+    <div class="card">
+      <div class="step-label">ĐÁNH GIÁ CHUNG</div>
+      <h2>Vài câu hỏi cuối cùng</h2>
+      <div class="field">
+        <label>Dashboard nào hữu ích nhất với công việc của anh/chị?</label>
+        <select id="sel-useful"><option value="">— Chọn —</option>${dashOptions}</select>
+      </div>
+      <div class="field">
+        <label>Dashboard nào anh/chị thấy cần cải thiện nhất?</label>
+        <select id="sel-improve"><option value="">— Chọn —</option>${dashOptions2}</select>
+      </div>
+      <div class="field">
+        <label>Mức độ hài lòng chung với bộ dashboard HR (1 = chưa hài lòng, 5 = rất hài lòng)</label>
+        <div class="rating-row">${ratingRow}</div>
+      </div>
+      <div class="field">
+        <label>Ý kiến/góp ý khác (không bắt buộc)</label>
+        <textarea id="txt-feedback" placeholder="Anh/chị góp ý thêm tại đây...">${a.feedback || ''}</textarea>
+      </div>
+      ${state.saveError ? `<div class="err-note">⚠️ ${state.saveError}</div>` : ''}
+      <div class="btn-row">
+        <button class="secondary" id="btn-back">Quay lại</button>
+        <button class="primary" id="btn-submit" ${canSubmit ? '' : 'disabled'}>Gửi khảo sát</button>
+      </div>
+    </div>
+  `;
+}
+function attachGeneral() {
+  document.getElementById('sel-useful').addEventListener('change', (e) => { state.answers.mostUseful = e.target.value; render(); });
+  document.getElementById('sel-improve').addEventListener('change', (e) => { state.answers.mostImprove = e.target.value; render(); });
+  document.querySelectorAll('[data-rating]').forEach(el => {
+    el.addEventListener('click', () => { state.answers.satisfaction = parseInt(el.getAttribute('data-rating')); render(); });
+  });
+  document.getElementById('txt-feedback').addEventListener('input', (e) => { state.answers.feedback = e.target.value; });
+  document.getElementById('btn-back').addEventListener('click', () => { state.step -= 1; render(); });
+  document.getElementById('btn-submit').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.textContent = "Đang gửi...";
+    try {
+      await saveResponse();
+      state.saveError = "";
+      state.step += 1;
+      render();
+    } catch (e) {
+      state.saveError = "Gửi thất bại (mất kết nối hoặc chưa cấu hình SUBMIT_URL). Vui lòng thử lại.";
+      render();
+    }
+  });
+}
+
+// ---------- THANKS ----------
+function renderThanks() {
+  return `
+    ${header("Hoàn tất")}
+    <div class="card center">
+      <div class="thanks-icon">✓</div>
+      <h2>Cảm ơn anh/chị đã phản hồi!</h2>
+      <p class="hint">Câu trả lời của anh/chị (${state.employee.name}) đã được ghi nhận cho toàn bộ ${DASHBOARDS.length} dashboard. HR SP sẽ tổng hợp để cải thiện trải nghiệm sử dụng dashboard trong thời gian tới.</p>
+    </div>
+  `;
+}
+function attachThanks() {}
+
+// ---------- ADMIN ----------
+function renderAdminGate() {
+  return `
+    ${header("Khu vực quản trị")}
+    <div class="card">
+      <h2>Nhập mã truy cập</h2>
+      <p class="hint">Khu vực này dành cho HR SP xem kết quả tổng hợp.</p>
+      <input type="text" id="admin-code" placeholder="Mã truy cập">
+      <div class="btn-row">
+        <button class="secondary" id="admin-cancel">Quay lại</button>
+        <button class="primary" id="admin-submit">Vào xem</button>
+      </div>
+    </div>
+  `;
+}
+function attachAdminGate() {
+  document.getElementById('admin-cancel').addEventListener('click', () => { state.step = -1; render(); });
+  document.getElementById('admin-submit').addEventListener('click', () => {
+    const val = document.getElementById('admin-code').value;
+    if (val === ADMIN_CODE) { state.step = -4; render(); }
+    else alert("Mã không đúng.");
+  });
+}
+
+async function renderAdminView(app) {
+  app.innerHTML = `${header("Kết quả tổng hợp")}<div class="card center"><p class="hint">Đang tải dữ liệu...</p></div>`;
+  let responses = [];
+  try {
+    const data = await apiGet({ adminCode: ADMIN_CODE });
+    if (data && data.ok) responses = data.rows || [];
+    else throw new Error((data && data.error) || 'Không đọc được dữ liệu');
+  } catch (e) {
+    app.innerHTML = `${header("Kết quả tổng hợp")}<div class="card center"><p class="hint">⚠️ Không tải được dữ liệu (chưa cấu hình SUBMIT_URL hoặc mất kết nối).</p>
+      <div class="btn-row"><button class="secondary" id="admin-back" style="flex:1">Quay lại</button></div></div>`;
+    document.getElementById('admin-back').addEventListener('click', () => { state.step = -1; render(); });
+    return;
+  }
+
+  const total = responses.length;
+  const usedCounts = {};
+  DASHBOARDS.forEach(d => {
+    usedCounts[d.id] = { used: 0, partial: 0, none: 0 };
+    responses.forEach(r => {
+      const st = r.answers[d.id] && r.answers[d.id].status;
+      if (st) usedCounts[d.id][st]++;
+    });
+  });
+  const avgSat = total ? (responses.reduce((s,r) => s + (r.answers.satisfaction||0), 0) / total).toFixed(1) : "—";
+
+  let tableRows = responses.map(r => {
+    const dashCells = DASHBOARDS.map(d => {
+      const st = r.answers[d.id] && r.answers[d.id].status;
+      return `<td>${st === 'used' ? 'Đã dùng' : st === 'partial' ? 'Biết chưa dùng' : st === 'none' ? 'Chưa biết' : '—'}</td>`;
+    }).join('');
+    return `<tr><td>${r.code}</td><td>${r.name}</td><td>${r.store}</td>${dashCells}<td>${r.answers.satisfaction||''}</td><td>${(r.answers.feedback||'').replace(/</g,'&lt;')}</td></tr>`;
+  }).join('');
+
+  app.innerHTML = `
+    ${header(`Kết quả tổng hợp · ${total} phản hồi`)}
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat-box"><div class="num">${total}</div><div class="lbl">Phản hồi</div></div>
+        <div class="stat-box"><div class="num">${avgSat}</div><div class="lbl">Hài lòng TB (/5)</div></div>
+        <div class="stat-box"><div class="num">${EMPLOYEES.length - total >= 0 ? EMPLOYEES.length - total : 0}</div><div class="lbl">Chưa trả lời</div></div>
+      </div>
+      ${DASHBOARDS.map(d => `
+        <div style="margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:600;color:var(--navy-dark);margin-bottom:4px;">${d.name}</div>
+          <div style="font-size:12px;color:var(--muted);">Đã dùng: ${usedCounts[d.id].used} · Biết chưa dùng: ${usedCounts[d.id].partial} · Chưa biết: ${usedCounts[d.id].none}</div>
+        </div>
+      `).join('')}
+      <div class="btn-row">
+        <button class="secondary" id="export-csv">Tải CSV</button>
+        <button class="secondary" id="admin-back">Quay lại</button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Mã NV</th><th>Tên</th><th>Store</th>${DASHBOARDS.map(d=>`<th>${d.name}</th>`).join('')}<th>Hài lòng</th><th>Góp ý</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  document.getElementById('admin-back').addEventListener('click', () => { state.step = -1; render(); });
+  document.getElementById('export-csv').addEventListener('click', () => exportCsv(responses));
+}
+
+function exportCsv(responses) {
+  const headers = ["Ma NV","Ten","Store","Dept","Position", ...DASHBOARDS.map(d=>d.name+" - Trang thai"), ...DASHBOARDS.map(d=>d.name+" - Ly do"), "Dashboard huu ich nhat","Dashboard can cai thien","Hai long","Gop y","Thoi gian gui"];
+  const rows = responses.map(r => {
+    const statusCells = DASHBOARDS.map(d => (r.answers[d.id] && r.answers[d.id].status) || "");
+    const reasonCells = DASHBOARDS.map(d => (r.answers[d.id] && r.answers[d.id].reason) || "");
+    return [r.code, r.name, r.store, r.dept, r.pos, ...statusCells, ...reasonCells, r.answers.mostUseful||"", r.answers.mostImprove||"", r.answers.satisfaction||"", (r.answers.feedback||"").replace(/\n/g," "), r.submittedAt];
+  });
+  const csv = [headers, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "ket_qua_khao_sat_dashboard.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+render();
+</script>
+</body>
+</html>
